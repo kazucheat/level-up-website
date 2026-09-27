@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: nxc-level-up
+    env: python
+    plan: starter
+    buildCommand: |
+      cd backend && pip install -r requirements.txt
+    startCommand: |
+      cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: TELEGRAM_USERNAME
+        sync: false
+    disk:
+      name: nxc-data
+      mountPath: /opt/render/project/src/backend/data
+      sizeGB: 5

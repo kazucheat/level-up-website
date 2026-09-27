@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — NXC LEVEL UP</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body data-auth="true">
+
+<nav class="nav">
+    <div class="logo">NXC <span>LEVEL UP</span> <span style="color:var(--purple); font-size:12px;">ADMIN</span></div>
+    <div class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/admin" class="active">Admin</a>
+        <button class="btn btn-secondary" id="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </div>
+</nav>
+
+<div class="container" style="padding-top:24px;">
+
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon purple"><i class="fa-solid fa-users"></i></div><div class="stat-content"><h3 id="s-users">0</h3><p>Total Users</p></div></div>
+    <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-indian-rupee-sign"></i></div><div class="stat-content"><h3 id="s-revenue" style="color:var(--green)">$0</h3><p>Est. Revenue</p></div></div>
+    <div class="stat-card"><div class="stat-icon pink"><i class="fa-solid fa-user-check"></i></div><div class="stat-content"><h3 id="s-paid">0</h3><p>Paid Users</p></div></div>
+    <div class="stat-card"><div class="stat-icon amber"><i class="fa-solid fa-robot"></i></div><div class="stat-content"><h3 id="s-running">0</h3><p>Running Bots</p></div></div>
+</div>
+
+<div class="card-box">
+    <div class="box-header">
+        <div class="box-title"><i class="fa-solid fa-user-shield" style="color:var(--purple)"></i> <span>All Users</span></div>
+        <button class="btn btn-secondary" onclick="loadUsers()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+    </div>
+    <div id="user-list" class="accounts-list"></div>
+</div>
+
+</div>
+
+<script src="/static/app.js"></script>
+<script>
+async function loadUsers() {
+    const token = localStorage.getItem('nxc_token');
+    const res = await fetch('/api/admin/users', { headers: {'Authorization': 'Bearer ' + token} });
+    if (res.status === 401 || res.status === 403) { alert('Not authorized'); location.href='/dashboard'; return; }
+    const users = await res.json();
+
+    document.getElementById('s-users').innerText = users.length;
+    document.getElementById('s-paid').innerText = users.filter(u => u.plan && u.plan !== 'free').length;
+    document.getElementById('s-running').innerText = users.reduce((a, u) => a + (u.bot_count || 0), 0);
+    document.getElementById('s-revenue').innerText = '$' + (users.filter(u => u.plan && u.plan !== 'free').length * 2);
+
+    const el = document.getElementById('user-list');
+    if (!users.length) {
+        el.innerHTML = '<div class="empty-state"><i class="fa-solid fa-ghost"></i><p>No users</p></div>';
+        return;
+    }
+    el.innerHTML = users.map(u => `
+        <div class="account-card">
+            <div class="acc-top">
+                <div class="acc-profile">
+                    <div class="acc-avatar"><i class="fa-solid fa-user"></i></div>
+                    <div class="acc-info">
+                        <h4>${u.username} <span class="region-badge">${(u.plan||'free').toUpperCase()}</span></h4>
+                        <span>${u.email}</span>
+                    </div>
+                </div>
+                <div class="action-btns">
+                    <button class="icon-btn" onclick="setPlan('${u.id}', 'free')" title="Free">F</button>
+                    <button class="icon-btn" onclick="setPlan('${u.id}', 'starting')" title="Starting">S</button>
+                    <button class="icon-btn" onclick="setPlan('${u.id}', 'basic')" title="Basic">B</button>
+                    <button class="icon-btn" onclick="setPlan('${u.id}', 'premium')" title="Premium">P</button>
+                    <button class="icon-btn" onclick="setPlan('${u.id}', 'safe')" title="Safe">SA</button>
+                </div>
+            </div>
+            <div class="acc-actions">
+                <span>ID: ${u.id} · Bots: ${u.bot_count || 0}</span>
+                <span>Joined: ${u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function setPlan(uid, plan) {
+    const token = localStorage.getItem('nxc_token');
+    try {
+        const res = await fetch('/api/admin/set-plan', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+            body: JSON.stringify({ user_id: uid, plan })
+        });
+        if (!res.ok) throw new Error('Failed');
+        loadUsers();
+    } catch (e) { alert(e.message); }
+}
+
+loadUsers();
+setInterval(loadUsers, 5000);
+</script>
+</body>
+</html>

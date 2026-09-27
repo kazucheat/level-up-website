@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — NXC LEVEL UP</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body data-auth="true">
+
+<nav class="nav">
+    <div class="logo">NXC <span>LEVEL UP</span></div>
+    <div class="nav-links">
+        <a href="/dashboard" class="active">Dashboard</a>
+        <a href="/pricing">Plans</a>
+        <a href="/admin" id="admin-link" style="display:none;">Admin</a>
+        <span id="user-name" style="color:var(--text); font-weight:600;"></span>
+        <button class="btn btn-secondary" id="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </div>
+</nav>
+
+<div class="container" style="padding-top:24px;">
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon purple"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-content"><h3 id="stat-accounts">0</h3><p>Your Accounts</p></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green"><i class="fa-solid fa-angles-up"></i></div>
+        <div class="stat-content"><h3 id="stat-exp" style="color:var(--green)">+0 EXP</h3><p>Total EXP Gained</p></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon pink"><i class="fa-solid fa-gamepad"></i></div>
+        <div class="stat-content"><h3 id="stat-matches">0</h3><p>Matches Completed</p></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon amber"><i class="fa-solid fa-crown"></i></div>
+        <div class="stat-content"><h3 id="stat-plan" style="color:var(--amber)">FREE</h3><p>Your Plan</p></div>
+    </div>
+</div>
+
+<div class="dashboard-main">
+    <div class="card-box">
+        <div class="box-header">
+            <div class="box-title"><i class="fa-solid fa-user-astronaut" style="color:var(--purple)"></i> <span>Your Accounts</span></div>
+            <button class="btn btn-primary" onclick="openAddModal()"><i class="fa-solid fa-plus"></i> Add Account</button>
+        </div>
+        <div class="accounts-list" id="accounts-container">
+            <div class="empty-state">
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+                <p>Loading accounts...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-box logs-box">
+        <div class="box-header">
+            <div class="box-title"><i class="fa-solid fa-terminal" style="color:var(--green)"></i> <span>Live Logs</span></div>
+        </div>
+        <div class="log-stream" id="log-stream"></div>
+    </div>
+</div>
+
+</div>
+
+<!-- Add Account Modal -->
+<div class="modal-overlay" id="add-modal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-user-plus" style="color:var(--purple); margin-right:8px;"></i> Add Account</h3>
+            <button class="icon-btn" onclick="closeAddModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="add-acc-form" onsubmit="submitAddAccount(event)">
+            <div class="form-group">
+                <label>Account Type</label>
+                <select class="form-input" id="acc-type" onchange="toggleFormType()">
+                    <option value="guest">Guest (UID + Password)</option>
+                    <option value="bulk">Bulk Add (Multiple lines)</option>
+                </select>
+            </div>
+            <div id="guest-fields">
+                <div class="form-group"><label>UID</label><input type="text" class="form-input" id="acc-uid" placeholder="e.g. 7644913583"></div>
+                <div class="form-group"><label>Password</label><input type="text" class="form-input" id="acc-password" placeholder="Paste password"></div>
+            </div>
+            <div id="bulk-fields" style="display:none;">
+                <div class="form-group">
+                    <label>Bulk (one per line: uid:password)</label>
+                    <textarea class="form-input" id="acc-bulk" rows="8" placeholder="7910439685:25A89721242592D62E1E...
+7910439977:2E5F8C83158DD4B29E98..."></textarea>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="/static/app.js"></script>
+<script>
+let startTime = Date.now();
+
+function openAddModal() { document.getElementById('add-modal').classList.add('active'); }
+function closeAddModal() { document.getElementById('add-modal').classList.remove('active'); }
+function toggleFormType() {
+    const t = document.getElementById('acc-type').value;
+    document.getElementById('guest-fields').style.display = t === 'guest' ? 'block' : 'none';
+    document.getElementById('bulk-fields').style.display = t === 'bulk' ? 'block' : 'none';
+}
+
+async function submitAddAccount(e) {
+    e.preventDefault();
+    const type = document.getElementById('acc-type').value;
+    const token = localStorage.getItem('nxc_token');
+
+    if (type === 'bulk') {
+        const raw = document.getElementById('acc-bulk').value.trim();
+        if (!raw) return alert('Paste accounts first');
+        const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+        let added = 0;
+        for (const line of lines) {
+            const [uid, password] = line.split(':').map(s => s.trim());
+            if (!uid || !password) continue;
+            try {
+                await fetch('/api/account/add', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                    body: JSON.stringify({ uid, password })
+                });
+                added++;
+            } catch {}
+        }
+        alert(`Added ${added} accounts`);
+        closeAddModal();
+        document.getElementById('add-acc-form').reset();
+        fetchStats();
+        return;
+    }
+
+    const uid = document.getElementById('acc-uid').value.trim();
+    const password = document.getElementById('acc-password').value.trim();
+    if (!uid || !password) return alert('Enter UID and Password');
+    try {
+        const res = await fetch('/api/account/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+            body: JSON.stringify({ uid, password })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || data.error || 'Error');
+        closeAddModal();
+        document.getElementById('add-acc-form').reset();
+        fetchStats();
+    } catch (ex) { alert(ex.message); }
+}
+
+async function deleteAccount(uid) {
+    if (!confirm('Remove account ' + uid + '?')) return;
+    const token = localStorage.getItem('nxc_token');
+    try {
+        await fetch('/api/account/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+            body: JSON.stringify({ uid })
+        });
+        fetchStats();
+    } catch {}
+}
+
+async function fetchStats() {
+    const token = localStorage.getItem('nxc_token');
+    if (!token) { location.href = '/login'; return; }
+    try {
+        const res = await fetch('/api/stats', { headers: {'Authorization': 'Bearer ' + token} });
+        if (res.status === 401) { location.href = '/login'; return; }
+        const data = await res.json();
+
+        document.getElementById('stat-accounts').innerText = data.total_accounts;
+        document.getElementById('stat-exp').innerText = '+' + data.total_gained_exp.toLocaleString() + ' EXP';
+        document.getElementById('stat-matches').innerText = data.total_matches;
+        document.getElementById('stat-plan').innerText = (data.plan || 'FREE').toUpperCase();
+
+        const user = JSON.parse(localStorage.getItem('nxc_user') || '{}');
+        document.getElementById('user-name').innerText = user.username || '';
+        if (user.role === 'admin') document.getElementById('admin-link').style.display = 'inline-block';
+
+        const container = document.getElementById('accounts-container');
+        if (!data.accounts.length) {
+            container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-ghost"></i><p>No accounts. Click "+ Add Account".</p></div>';
+        } else {
+            container.innerHTML = data.accounts.map(acc => {
+                const gainedExp = acc.gained_exp || 0;
+                const st = acc.status === 'IN_MATCH' ? 'status-match' : 'status-online';
+                const stText = acc.status === 'IN_MATCH' ? `In Match (${acc.active_matches || 0})` : acc.status;
+                return `
+                <div class="account-card">
+                    <div class="acc-top">
+                        <div class="acc-profile">
+                            <div class="acc-avatar"><i class="fa-solid fa-user"></i></div>
+                            <div class="acc-info">
+                                <h4>${escapeHtml(acc.nickname)} <span class="region-badge">${acc.region || 'BD'}</span></h4>
+                                <span>UID: ${acc.uid}</span>
+                            </div>
+                        </div>
+                        <div class="acc-status ${st}"><span class="pulse-dot"></span><span>${stText}</span></div>
+                    </div>
+                    <div class="exp-box">
+                        <div class="exp-item"><span class="exp-label">Initial</span><span class="exp-val">${(acc.initial_exp||0).toLocaleString()}</span></div>
+                        <div class="exp-item"><span class="exp-label">Current</span><span class="exp-val">${(acc.current_exp||0).toLocaleString()}</span></div>
+                        <div class="exp-item"><span class="exp-label">Gained</span><span class="exp-val exp-gained"><span class="gained-badge">+${gainedExp.toLocaleString()}</span></span></div>
+                    </div>
+                    <div class="acc-actions">
+                        <span>Level ${acc.level||1} · Matches: ${acc.matches_played||0}</span>
+                        <div class="action-btns">
+                            <button class="icon-btn danger" onclick="deleteAccount('${acc.uid}')"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        const logContainer = document.getElementById('log-stream');
+        logContainer.innerHTML = (data.logs || []).map(log =>
+            `<div class="log-item"><span class="log-time">[${log.time}]</span><span class="log-${log.level}">${escapeHtml(log.message)}</span></div>`
+        ).join('');
+        logContainer.scrollTop = logContainer.scrollHeight;
+    } catch (err) { console.error(err); }
+}
+
+function escapeHtml(t) { return t ? String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
+
+setInterval(() => {
+    const sec = Math.floor((Date.now() - startTime) / 1000);
+    const h = String(Math.floor(sec/3600)).padStart(2,'0');
+    const m = String(Math.floor((sec%3600)/60)).padStart(2,'0');
+    const s = String(sec%60).padStart(2,'0');
+}, 1000);
+
+fetchStats();
+setInterval(fetchStats, 2500);
+</script>
+</body>
+</html>

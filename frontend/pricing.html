@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plans — NXC LEVEL UP</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body data-auth="true">
+
+<nav class="nav">
+    <div class="logo">NXC <span>LEVEL UP</span></div>
+    <div class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/pricing" class="active">Plans</a>
+        <a href="/admin" id="admin-link" style="display:none;">Admin</a>
+        <button class="btn btn-secondary" id="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </div>
+</nav>
+
+<section class="section" id="plans">
+    <div class="section-head">
+        <div class="badge">Choose Your Plan</div>
+        <h2>Simple <span class="grad">pricing</span></h2>
+        <p>Contact us on Telegram after clicking a plan. Instant activation.</p>
+    </div>
+    <div class="plans-grid">
+        <div class="plan-card">
+            <div class="plan-name">Starting</div>
+            <div class="plan-sub">Try before you commit</div>
+            <div class="plan-price"><span class="old">$2</span><span class="new">$1</span></div>
+            <ul class="plan-list">
+                <li>Access To The Panel For 1 Day</li>
+                <li>Fast Leveling Performance</li>
+                <li>Run Multiple Accounts At Once</li>
+                <li>Restart & Manage Accounts Anytime</li>
+                <li>Runs While You Are Offline</li>
+                <li>Telegram Payment Support & Quick Help</li>
+                <li>3 Concurrent Accounts</li>
+            </ul>
+            <button class="btn btn-primary btn-full" onclick="buyPlan('starting', '$1')">Buy Now</button>
+            <div class="plan-note">Instant Activation After Payment</div>
+        </div>
+        <div class="plan-card popular">
+            <div class="plan-ribbon">MOST POPULAR</div>
+            <div class="plan-name">Basic</div>
+            <div class="plan-sub">Best for most players</div>
+            <div class="plan-price"><span class="old">$4</span><span class="new">$2</span></div>
+            <ul class="plan-list">
+                <li>Access To The Panel For 2 Days</li>
+                <li>Fast Leveling Performance</li>
+                <li>Run Multiple Accounts At Once</li>
+                <li>Restart & Manage Accounts Anytime</li>
+                <li>Runs While You Are Offline</li>
+                <li>Telegram Payment Support & Quick Help</li>
+                <li>3 Concurrent Accounts</li>
+            </ul>
+            <button class="btn btn-primary btn-full" onclick="buyPlan('basic', '$2')">Buy Now</button>
+            <div class="plan-note">Instant Activation After Payment</div>
+        </div>
+        <div class="plan-card">
+            <div class="plan-name">Premium</div>
+            <div class="plan-sub">Fastest speed available</div>
+            <div class="plan-price"><span class="old">$6</span><span class="new">$2.5</span></div>
+            <ul class="plan-list">
+                <li>Access To The Panel For 3 Days</li>
+                <li>Fastest Leveling Speed Available</li>
+                <li>Run Multiple Accounts At Once</li>
+                <li>Restart & Manage Accounts Anytime</li>
+                <li>Runs 24/7 — No Need To Stay Online</li>
+                <li>Telegram Payment Support & Quick Help</li>
+                <li>4 Concurrent Accounts</li>
+            </ul>
+            <button class="btn btn-primary btn-full" onclick="buyPlan('premium', '$2.5')">Buy Now</button>
+            <div class="plan-note">Instant Activation After Payment</div>
+        </div>
+        <div class="plan-card">
+            <div class="plan-name">Safe</div>
+            <div class="plan-sub">Best value — full week</div>
+            <div class="plan-price"><span class="old">$10</span><span class="new">$7</span></div>
+            <ul class="plan-list">
+                <li>Access To The Panel For 7 Days</li>
+                <li>Fastest Leveling Speed Available</li>
+                <li>Run Multiple Accounts At Once</li>
+                <li>Restart & Manage Accounts Anytime</li>
+                <li>Runs 24/7 — No Need To Stay Online</li>
+                <li>Telegram Payment Support & Quick Help</li>
+                <li>5 Concurrent Accounts</li>
+            </ul>
+            <button class="btn btn-primary btn-full" onclick="buyPlan('safe', '$7')">Buy Now</button>
+            <div class="plan-note">Instant Activation After Payment</div>
+        </div>
+    </div>
+</section>
+
+<!-- Buy Modal -->
+<div class="modal-overlay" id="buy-modal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Get <span id="modal-plan-name">Plan</span></h3>
+            <button class="icon-btn" onclick="closeBuyModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <p style="color:var(--muted); font-size:14px; margin-bottom:16px;">Contact us on Telegram to complete your purchase. Payment methods: UPI, Paytm, Bank Transfer.</p>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <a href="https://t.me/yourusername" target="_blank" class="btn btn-primary btn-full"><i class="fa-brands fa-telegram"></i> Telegram Support</a>
+        </div>
+    </div>
+</div>
+
+<script src="/static/app.js"></script>
+<script>
+function buyPlan(plan, price) {
+    document.getElementById('modal-plan-name').innerText = plan.toUpperCase() + ' — ' + price;
+    document.getElementById('buy-modal').classList.add('active');
+}
+function closeBuyModal() { document.getElementById('buy-modal').classList.remove('active'); }
+</script>
+</body>
+</html>
